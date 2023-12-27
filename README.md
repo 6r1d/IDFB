@@ -7,9 +7,9 @@ It typically runs in Docker and needs minimal dependencies, which are installed 
 # Configuring
 
 You need to fill out certain configuration parameters for the bot to work properly.
-The configuration is split between the top-level parameters and the configuration file.
+The configuration is split between the command-line arguments and the configuration file.
 
-## Top-level parameters
+## Command-line arguments
 
 The following are the available command-line arguments for configuring the bot:
 
