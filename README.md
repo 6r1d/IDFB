@@ -19,7 +19,6 @@ The following are the available command-line arguments for configuring the bot:
 | `--port `              | Sets the port number for the HTTP server.                    | `--port 8080`                                           | The server will listen on port 8080.                                           |
 | `--rotation_path `     | Defines the path for rotation logs.                          | `--rotation_path ./rotation`                            | Uses the rotation directory in the current working directory for log rotation. |
 | `--config `            | Specifies the path to the configuration file in JSON format. | `--config ./config.json`                                | Points to a `config.json` file in the current directory.                       |
-| `--telegram_group_id ` | Indicates the file path containing the Telegram group ID.    | `--telegram_group_id` `./secrets/telegram_group_id.txt` | Uses the `telegram_group_id.txt` file in the secrets directory.                |
 | `--telegram_token `    | Specifies the file path containing the Telegram bot token.   | `--telegram_token` `./secrets/telegram_token.txt`       | Uses the `telegram_token.txt` file in the secrets directory.                   |
 | `--github_token `      | Defines the file path containing the GitHub token.           | `--github_token` `./secrets/github_token.txt`           | Uses the github_token.txt file in the secrets directory.                       |
 
@@ -61,7 +60,6 @@ python bot.py --addr "0.0.0.0" \
        --port 8080 \
        --rotation_path ./rotation \
        --config ./config.json \
-       --telegram_group_id ./secrets/telegram_group_id.txt \
        --telegram_token ./secrets/telegram_token.txt \
        --github_token ./secrets/github_token.txt
 ```
@@ -94,7 +92,6 @@ docker run \
        -v ./config.json:/opt/bot/config.json \
        -v ./rotation:/opt/bot/rotation \
        -v ./secrets/telegram_token.txt:/run/secrets/telegram_token.txt \
-       -v ./secrets/telegram_group_id.txt:/run/secrets/telegram_group_id.txt \
        -v ./secrets/github_token.txt:/run/secrets/github_token.txt \
        'iamgrid/iroha_feedback_bot:vX.Y.Z'
 ```
@@ -111,7 +108,6 @@ Let's review the command parameters:
 - - Rotation directory (`/opt/bot/rotation` in the image) is the directory that stores the
 JSON files for the user feedback. It allows to make sure the files are either sent successfully and removed or are preserved for the next container run.
 - - Telegram token (`/run/secrets/telegram_token.txt` in the image) is needed for the bot to log in.
-- - Telegram group ID (`/run/secrets/telegram_group_id.txt` in the image) is needed to select to which group the message is sent.
 - - GitHub token (`/run/secrets/github_token.txt` in the image) is needed for the GitHub part of the bot to work properly. It is a typical application token.
 
 # Bot repos
