@@ -34,14 +34,13 @@ async def main():
     rotation_path = Path(input_args.rotation_path).absolute()
     # Configure the GitHub sender
     github_sender = GitHubSender(
-        input_args.github_token.read(),
+        input_args.github_token.read().strip(),
         config.get('github_repository')
     )
     # Configure the Telegram bot
     telegram_bot = TriageTelegramBot(
-        token=input_args.telegram_token.read(),
+        token=input_args.telegram_token.read().strip(),
         github_sender=github_sender,
-        telegram_group_id=input_args.telegram_group_id.read(),
         config=config
     )
     telegram_bot_runner = telegram_bot.runner()

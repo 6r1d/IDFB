@@ -78,8 +78,7 @@ class TriageTelegramBot:
         await asyncio.gather(bot.runner())
     """
 
-    def __init__(self, token, telegram_group_id,
-                 config, github_sender):
+    def __init__(self, token, config, github_sender):
         self.running = True
         self.router = Router()
         self.dispatcher = Dispatcher()
@@ -87,7 +86,7 @@ class TriageTelegramBot:
         self.dispatcher.include_router(self.router)
         self.dispatcher.shutdown.register(self.stop)
         self.dispatcher.callback_query.register(self.process_feedback_button_click)
-        self.telegram_group_id = telegram_group_id
+        self.telegram_group_id = config.get('telegram_group_id')
         self.github_sender = github_sender
         self.config = config
         # Amount of people needed for triage

@@ -65,10 +65,6 @@ def get_arguments():
                         required=True)
     # Telegram bot-related arguments
     telegram_bot_group = parser.add_argument_group('Telegram bot configuration')
-    telegram_bot_group.add_argument('-tgid', "--telegram_group_id",
-                                    help="Path to the Telegram chat ID file",
-                                    required=True,
-                                    type=FileType('r'))
     telegram_bot_group.add_argument('-tk', "--telegram_token",
                                     help="Path to the Telegram token file",
                                     required=True,
