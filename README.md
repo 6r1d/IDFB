@@ -2,8 +2,6 @@
 
 This bot reposts the user feedback received by HTTP from the [Iroha](https://github.com/hyperledger/iroha) documentation to a Telegram group and lets people vote for it. With enough votes, the bot reposts the feedback record to GitHub.
 
-It typically runs in Docker and needs minimal dependencies, which are installed automatically.
-
 # Configuring
 
 You need to fill out certain configuration parameters for the bot to work properly.
@@ -15,7 +13,7 @@ The following are the available command-line arguments for configuring the bot:
 
 | Parameter              | Description                                                  | Example                                                 | Example details                                                                |
 |------------------------|--------------------------------------------------------------|---------------------------------------------------------|--------------------------------------------------------------------------------|
-| `--addr <address>`     | Specifies the address on which the HTTP server will listen.  | `--addr "0.0.0.0"`                                      | Listens on all network interfaces.                                             |
+| `--addr <address>`     | Specifies the address on which the HTTP server will listen.  | `--addr "0.0.0.0"`                                      | Listens to `localhost`.                                                        |
 | `--port `              | Sets the port number for the HTTP server.                    | `--port 8080`                                           | The server will listen on port 8080.                                           |
 | `--rotation_path `     | Defines the path for rotation logs.                          | `--rotation_path ./rotation`                            | Uses the rotation directory in the current working directory for log rotation. |
 | `--config `            | Specifies the path to the configuration file in JSON format. | `--config ./config.json`                                | Points to a `config.json` file in the current directory.                       |
@@ -102,7 +100,7 @@ docker run \
 Let's review the command parameters:
 
 - `--init` initializes a new container process with `tini` init system on.
-- `--expose 8080` exposes port 8080 from the Docker container.
+- `--expose 8080` exposes port 8080 for the Docker container.
 - `-p`, the port mapping parameter, matches a system port on the left to the port on the Docker image.
 - `-v HOST_PATH:CONTAINER_PATH` binds the file on your host to a file inside the container.
 - - Rotation directory (`/opt/bot/rotation` in the image) is the directory that stores the
