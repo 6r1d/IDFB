@@ -41,7 +41,7 @@ Below is the structure and description of each field in the configuration file:
 |------------------------------|----------------------|---------------------------------------------------------------------------------------------------------------|----------------------------------------------|
 | `telegram_group_id`          | `String` / `Integer` | The unique identifier for the Telegram group where feedback messages will be sent.                            | `"telegram_group_id": "123456789"`           |
 | `github_repository`          | `String`             | The GitHub repository where the feedback will be forwarded: `<GitHub Username>`/`<Repository Name>`           | `"github_repository": "username/repository"` |
-| `feedback_rotation_interval` | `Integer`            | The interval in seconds that defines how frequently the feedback files are scanned and sent to Telegram.      | `"feedback_rotation_interval": 3600`         |
+| `feedback_rotation_interval` | `Integer`            | The interval in seconds that defines how frequently the feedback files are scanned and sent to Telegram.      | `"feedback_rotation_interval": 1`            |
 | `triage_threshold`           | `Integer`            | The number of votes a feedback message needs to receive before it is sent to the specified GitHub repository. | `"triage_threshold": 5`                      |
 
 # Running
