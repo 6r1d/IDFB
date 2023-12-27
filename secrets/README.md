@@ -1,0 +1,1 @@
+Use this directory to store the secrets, if those aren't redefined by Kubernetes or Docker-compose.
