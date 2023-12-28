@@ -1,28 +1,36 @@
 # Iroha Documentation Feedback Bot
 
-This bot reposts the user feedback received by HTTP from the [Iroha](https://github.com/hyperledger/iroha) documentation to a Telegram group and lets people vote for it. With enough votes, the bot reposts the feedback record to GitHub.
+This bot reposts user feedback entries received via HTTP from the [Iroha 2 Documentation](https://docs.iroha.tech/) website to a designated [Telegram](https://telegram.org/) group. Members of the group can discuss and vote on the entries, determining whether any of them require further attention. Once an entry receives enough votes, the bot creates a new GitHub issue in the specified repository and reposts the feedback there.
 
-# Configuring
+# Configuring the Bot
+<!-- TODO: when changing hierarchy, consider swapping the H2 subtopics around -->
+For the bot to function properly, it requires certain configuration parameters to be specified. These are split between the `config.json` configuration file and command-line arguments that are specified when running the bot.
 
-You need to fill out certain configuration parameters for the bot to work properly.
-The configuration is split between the command-line arguments and the configuration file.
+## Command-Line Arguments
 
-## Command-line arguments
+Available command-line arguments for configuring the bot:
 
-The following are the available command-line arguments for configuring the bot:
+| Argument           | Description                                                            | Example                                           | Example details                                                  |
+| ------------------ | ---------------------------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
+| `--addr <address>` | Specifies the address that the HTTP server listens to.                 | `--addr "0.0.0.0"`                                | The HTTP servers listens to `localhost`.                         |
+| `--port`           | Sets the port number that the HTTP server listens through.             | `--port 8080`                                     | The HTTP server listens via port `8080`.                         |
+| `--rotation_path`  | Defines the path to a directory that the rotation logs are saved to.   | `--rotation_path ./rotation`                      | Uses the `/rotation` directory in the current working directory. |
+| `--config`         | Specifies the path to `config.json` configuration file.                | `--config ./config.json`                          | Uses the `config.json` file in the current working directory.    |
+| `--telegram_token` | Specifies the path to a `.txt` file containing the Telegram bot token. | `--telegram_token` `./secrets/telegram_token.txt` | Uses the `telegram_token.txt` file in the `/secrets` directory.  |
+| `--github_token`   | Specifies the path to a `.txt` file containing the GitHub token.       | `--github_token` `./secrets/github_token.txt`     | Uses the `github_token.txt` file in the `/secrets` directory.    |
 
-| Parameter              | Description                                                  | Example                                                 | Example details                                                                |
-|------------------------|--------------------------------------------------------------|---------------------------------------------------------|--------------------------------------------------------------------------------|
-| `--addr <address>`     | Specifies the address on which the HTTP server will listen.  | `--addr "0.0.0.0"`                                      | Listens to `localhost`.                                                        |
-| `--port `              | Sets the port number for the HTTP server.                    | `--port 8080`                                           | The server will listen on port 8080.                                           |
-| `--rotation_path `     | Defines the path for rotation logs.                          | `--rotation_path ./rotation`                            | Uses the rotation directory in the current working directory for log rotation. |
-| `--config `            | Specifies the path to the configuration file in JSON format. | `--config ./config.json`                                | Points to a `config.json` file in the current directory.                       |
-| `--telegram_token `    | Specifies the file path containing the Telegram bot token.   | `--telegram_token` `./secrets/telegram_token.txt`       | Uses the `telegram_token.txt` file in the secrets directory.                   |
-| `--github_token `      | Defines the file path containing the GitHub token.           | `--github_token` `./secrets/github_token.txt`           | Uses the github_token.txt file in the secrets directory.                       |
+## Configuration File
 
-## Configuration file
+The bot uses the `config.json` configuration file to set the following parameters:
 
-The bot uses a JSON configuration file to set various parameters.
+| Parameter                    | Type               | Description                                                                                                                   |
+| ---------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `telegram_group_id`          | `String`/`Integer` | The unique ID of the Telegram group that the collected feedback entries are sent to.                                          |
+| `github_repository`          | `String`           | The GitHub repository that the approved feedback entries are forwarded to.<br>Format: `<GitHub Username>`/`<Repository Name>` |
+| `feedback_rotation_interval` | `Integer`          | The interval in seconds that defines how frequently the feedback files are scanned and sent to the Telegram group.            |
+| `triage_threshold`           | `Integer`          | The number of votes that a feedback entry needs to receive before it is sent to the specified GitHub repository.              |
+
+**Example**:
 
 ```json
 {
@@ -33,54 +41,53 @@ The bot uses a JSON configuration file to set various parameters.
 }
 ```
 
-Below is the structure and description of each field in the configuration file:
+# Running the Bot
 
-| Parameter                    | Type                 | Description                                                                                                   | Example                                      |
-|------------------------------|----------------------|---------------------------------------------------------------------------------------------------------------|----------------------------------------------|
-| `telegram_group_id`          | `String` / `Integer` | The unique identifier for the Telegram group where feedback messages will be sent.                            | `"telegram_group_id": "123456789"`           |
-| `github_repository`          | `String`             | The GitHub repository where the feedback will be forwarded: `<GitHub Username>`/`<Repository Name>`           | `"github_repository": "username/repository"` |
-| `feedback_rotation_interval` | `Integer`            | The interval in seconds that defines how frequently the feedback files are scanned and sent to Telegram.      | `"feedback_rotation_interval": 1`            |
-| `triage_threshold`           | `Integer`            | The number of votes a feedback message needs to receive before it is sent to the specified GitHub repository. | `"triage_threshold": 5`                      |
+## Running the Bot Manually
 
-# Running
+To run the bot manually, perform the following steps:
 
-## Manual run
+0. Have [Python](https://www.python.org/) (`v3.11.6` or newer) installed.
+1. Install the dependencies/requirements:
 
-Before launching the bot, ensure that you have installed Python (tested on `3.11.6`).
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-> [!IMPORTANT]
-> It may be useful to isolate the internal dependencies from the external ones with a [venv](https://docs.python.org/3/library/venv.html) module.
+2. Run the bot with the [command-line arguments](#command-line-arguments) specified:
 
-Install the requirements with `pip install -r requirements.txt`.
+   ```bash
+   python bot.py --addr "0.0.0.0" \
+          --port 8080 \
+          --rotation_path ./rotation \
+          --config ./config.json \
+          --telegram_group_id ./secrets/telegram_group_id.txt \
+          --telegram_token ./secrets/telegram_token.txt \
+          --github_token ./secrets/github_token.txt
+   ```
 
-```bash
-python bot.py --addr "0.0.0.0" \
-       --port 8080 \
-       --rotation_path ./rotation \
-       --config ./config.json \
-       --telegram_token ./secrets/telegram_token.txt \
-       --github_token ./secrets/github_token.txt
-```
+## Running the Bot via Docker
 
-## Docker
+### Building a Custom Docker Image
 
-### Building a custom image
+To build a custom Docker image for your project, perform the following steps:
 
-To build a custom Docker image for your project, follow these steps:
+1. Open your terminal and navigate to the root directory of your project where the Dockerfile is located.
+2. Initiate the building process:
 
-- Open your terminal and navigate to the root directory of your project where the Dockerfile is located.
-- Run the following command to initiate the build process:
-
-```bash
-docker buildx build . --tag 'iamgrid/iroha_feedback_bot:vX.Y.Z'
-```
+   ```bash
+   docker buildx build . --tag 'iamgrid/iroha_feedback_bot:vX.Y.Z'
+   ```
 
 > [!IMPORTANT]
-> Make sure to replace `iamgrid/iroha_feedback_bot:vX.Y.Z` with the appropriate image tag (like `v0.1.9`) you want to build.
+> Make sure to replace `vX.Y.Z` in `iamgrid/iroha_feedback_bot:vX.Y.Z` with an appropriate image tag (e.g., `v0.1.9` for the latest tag) that you want to run.
 
-### Running a custom image
+### Running a Custom Docker Image
 
-To run a custom Docker image of the bot, you can use the `docker run` command in a following way:
+To run a custom Docker image of the bot, run the `docker run` command with the [command-line arguments](#command-line-arguments) specified:
+
+> [!IMPORTANT]
+> When running the bot through its Docker image, the [command-line arguments](#command-line-arguments) must still be specified, however the syntax varies from the JSON format (see below).
 
 ```bash
 docker run \                                                   
@@ -90,78 +97,100 @@ docker run \
        -v ./config.json:/opt/bot/config.json \
        -v ./rotation:/opt/bot/rotation \
        -v ./secrets/telegram_token.txt:/run/secrets/telegram_token.txt \
+       -v ./secrets/telegram_group_id.txt:/run/secrets/telegram_group_id.txt \
        -v ./secrets/github_token.txt:/run/secrets/github_token.txt \
        'iamgrid/iroha_feedback_bot:vX.Y.Z'
 ```
 
 > [!IMPORTANT]
-> Make sure to replace `vX.Y.Z` in `iamgrid/iroha_feedback_bot:vX.Y.Z` with the appropriate image tag (like `v0.1.9`) you want to run.
+> Make sure to replace `vX.Y.Z` in `iamgrid/iroha_feedback_bot:vX.Y.Z` with an appropriate image tag (e.g., `v0.1.9` for the latest tag) that you want to run.
 
-Let's review the command parameters:
+Descriptions of the used parameters:
 
-- `--init` initializes a new container process with `tini` init system on.
-- `--expose 8080` exposes port 8080 for the Docker container.
-- `-p`, the port mapping parameter, matches a system port on the left to the port on the Docker image.
-- `-v HOST_PATH:CONTAINER_PATH` binds the file on your host to a file inside the container.
-- - Rotation directory (`/opt/bot/rotation` in the image) is the directory that stores the
-JSON files for the user feedback. It allows to make sure the files are either sent successfully and removed or are preserved for the next container run.
-- - Telegram token (`/run/secrets/telegram_token.txt` in the image) is needed for the bot to log in.
-- - GitHub token (`/run/secrets/github_token.txt` in the image) is needed for the GitHub part of the bot to work properly. It is a typical application token.
+- `--init`: initializes a new container process with [`tini`](https://github.com/krallin/tini) (comes included with Docker 1.13 or newer).
+- `--expose 8080`: exposes the `8080` the for the Docker container.
+- `-p`: the port mapping parameter, matches the first system port with the one used by the Docker image.
+- `-v HOST_PATH:CONTAINER_PATH` binds a file from the host to a file within a container.
+  - Rotation directory (`/opt/bot/rotation` in the image) is the directory that stores the JSON files containing the user feedback. It makes sure that the files are either sent successfully and removed or are preserved for the next container run.
+  - Telegram token (`/run/secrets/telegram_token.txt` in the image) is used by the bot to log in to Telegram.
+  - Telegram group ID (`/run/secrets/telegram_group_id.txt` in the image) specifies the Telegram group that receives the feedback entries.
+  - GitHub token (`/run/secrets/github_token.txt` in the image) is used by the bot for two-way communication with the GitHub services.
 
-# Bot repos
 
-[Dockerhub](https://hub.docker.com/repository/docker/iamgrid/iroha_feedback_bot/general)
+# Docker Image
+<!-- TODO: when changing hierarchy, move this part to the beginning of the doc, change H1 to H3 -->
+- [Docker Image on Dockerhub](https://hub.docker.com/repository/docker/iamgrid/iroha_feedback_bot/general)
+  - Latest Tag: [iamgrid/iroha_feedback_bot:v0.1.9](https://hub.docker.com/layers/iamgrid/iroha_feedback_bot/v0.1.9/images/sha256-4f5d84d859c7b3990f461f3fd47b38a388fd70eff84e4a45b64a6e17e9708451?context=explore)
+  <!-- TODO: Update the latest tag once its updated -->
 
 # Tokens
 
-## Github tokens
+## GitHub Token
 
-In order to allow this bot access to GitHub, you'll need to generate a custom GitHub token; it will enable the application to interact with your GitHub repository. Follow these steps to create and configure your token:
+In order to allow this bot to access GitHub, a custom GitHub token for its account must be generated. This enables the application to interact with the specified GitHub repository.
 
-* Visit the GitHub "[Personal access tokens](https://github.com/settings/tokens?type=beta)" page. You can find this page under the developer settings in your GitHub account.
-* Click on the "Generate new token" button. You may be prompted to enter your password to verify your identity or use your security key.
-* Choose the maximum available expiration date for the token to ensure long-term access. This step is important as it defines how long the token will remain valid before needing renewal.
-* In the "Repository access" section, select a specific repository that the application will interact with.
-  This targeted approach ensures that the token has access only to the repository it needs, enhancing security.
-* Expand the "Repository permissions" section. Here, you need to set the appropriate permissions for the token. Navigate to the "Issues" subsection. Select the "read and write" option. This permission level allows the token to both view and update issues in the selected repository.
-* After setting all necessary permissions, scroll down and click on the "Generate token" button to create your token.
+To create and configure your GitHub token, perform the following steps:
 
-> [!WARNING]
-> Keep your token secure.
-> Use it with Docker/Kubernetes secrets and limit file access with filesystem permission if you are running the code directly. Treat it like a password, as it provides direct access to your GitHub repository based on the permissions set. If your token is compromised, you should revoke it immediately and generate a new one.
+0. Log in to the GitHub account that will be used by the bot.
+1. Go to **Settings** > **Developer Settings** > **Personal access tokens** > **Fine-grained tokens**.
+2. Select **Generate new token**.\
+   Here, you will be prompted to verify your authorization either with your password or through a 2FA method if you have it set up.
+3. Fill in the **Token name** and **Description** fields as you see fit.
+4. From the **Expiration** menu, select the longest available option (`90 days`) or specify a **Custom** date.\
+   This is important to ensure that the generated token remains valid for a significant period of time before it needs to be renewed.
+5. Under the **Repository access** section, select **Only select repositories**, then find and choose the required repository from the **Select repositories** menu by either searching for it using the **Search** bar or selecting an entry from a list that appears.\
+   This targeted approach ensures that the generated token only has access to the repository that it needs, which enhances overall security.
+6. Under the **Permissions** section, select the **Repository permissions** menu and navigate down to the **Issues** entry, then select **Read and write** in the **Access:** menu within the entry.
+7. When ready, select **Generate token** at the bottom of the page.
 
-## Telegram token
-
-To use the Telegram Bot API, you need a unique bot token, which is provided by the `@BotFather` bot on Telegram. If you don't already have a token, you can create one by following these steps:
-
-- Open Telegram and search for `@BotFather` in the search bar.
-- Start a chat with `@BotFather` by clicking on it and then click the "Start" button.
-- Use the `/newbot` command to create a new bot. Follow the instructions provided by `@BotFather` to choose a name and username for your bot.
-- Once you've completed the setup, `@BotFather` will provide you with a token string.
-  This token is essential for authenticating your bot with the Telegram API.
+> [!TIP]
+> If, at any point, you're experiencing difficulties with generating a GitHub token, consult the official documentation:\
+  [GitHub Docs: Managing your personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
 
 > [!WARNING]
-> Make sure to copy and securely store your bot token in Docker secrets or limit the file access with filesystem permissions. You will need it to interact with the Telegram Bot API in your application.
+> Keep your token secure.\
+> Use it with Docker/Kubernetes secrets and limit file access with a corresponding filesystem permission if you are running the code directly.\
+  Treat the token as if it is a password, since it provides direct access to your GitHub repository based on the permissions set.\
+  If your token is compromised, it must immediately be revoked, and a new one generated instead.
 
-# Code
+## Telegram Token
 
-Below is an overview of the files in the current codebase, along with their respective purposes and functionalities.
+To use the Telegram Bot API, you need a unique Telegram Bot API token, which is commonly generated by the `@BotFather` bot on Telegram.
 
-| **File**                               | **Description**                    | **Functionality** |
-|----------------------------------------|------------------------------------|-------------------|
-| [`bot.py`](./bot.py)                   | Main bot code file                 | This file houses the core logic and functionality of the bot. It serves as the entry point and orchestrates bot operations. |
-| [`arguments.py`](./arguments.py)       | `argparse` configuration           | Responsible for configuring and managing command-line argument parsing using the argparse library. It handles command-line input for the application. |
-| [`github_issue.py`](./github_issue.py) | GitHub issue creation module       | This module facilitates interaction with the GitHub API to create and manage issues within a GitHub repository. It streamlines issue-related tasks. |
-| [`rotation.py`](./rotation.py)         | File rotation utilities            | Offers utilities for managing and rotating log or data files. It ensures efficient disk space usage by handling file rotation. |
-| [`hash.py`](./hash.py)                 | Random string generation utilities | Provides functions for generating and manipulating hash values and random strings. It supports various hash-related operations. |
-| [`telegram.py`](./telegram.py)         | Telegram bot functionality         | This file contains the code responsible for implementing Telegram bot features. It handles message sending, processing, and interaction with Telegram's API. |
-| [`webserver.py`](./webserver.py)       | AioHTTP-based server functionality | Implements a web server using the AioHTTP library. This server handles HTTP requests and serves web-based functionalities. |
+If you don't have a token yet, create one by performing the following steps:
+
+1. In Telegram, look up `@BotFather` through the **Search** bar and then open a chat with it.
+2. In the chat with `@BotFather`, select **Start**.
+3. Type in or select `/newbot` from the message with a list of commands.
+4. Follow the instructions provided by `@BotFather` via chat messages to create and configure your bot.
+5. Once done, `@BotFather` will provide you with a unique Telegram Bot API token string.
+
+The Telegram Bot API token is used to authenticate your bot with the Telegram API (see `--telegram_token ` in the [Command-Line Arguments](#command-line-arguments) table).
+
+> [!WARNING]
+> Make sure to copy and securely store your Telegram Bot API token in the Docker secrets, or limit the access to the file containing it with filesystem permissions.\
+  This token is used to interact with the Telegram Bot API through your application.
+
+# File Structure Overview
+
+Below is an overview of the files in the current codebase, along with their respective purposes and functionalities:
+
+| File                                   | Description                          | Functionality                                                                                                                                                    |
+| -------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`bot.py`](./bot.py)                   | Main bot code file                   | This file houses the core logic and functionality of the bot. It serves as the entry point and orchestrates the bot operations.                                  |
+| [`arguments.py`](./arguments.py)       | `argparse` configuration             | Responsible for configuring and managing the parsing of the command-line arguments using the `argparse` library; handles command-line input for the application. |
+| [`github_issue.py`](./github_issue.py) | GitHub issue creation module         | This module facilitates interaction with the GitHub API to create and manage issues within a GitHub repository; streamlines the issues-related tasks.            |
+| [`rotation.py`](./rotation.py)         | File rotation utilities              | Offers utilities for managing and rotating log and data files; ensures efficient disk space usage by handling the file rotation.                                 |
+| [`hash.py`](./hash.py)                 | Random string generation utilities   | Provides functions for generating and manipulating hash values and random strings; accommodates various hash-related operations.                                 |
+| [`telegram.py`](./telegram.py)         | Telegram bot functionality           | Contains the code responsible for implementing Telegram bot features; it handles messages sending, processing, and other interactions with the Telegram API.     |
+| [`webserver.py`](./webserver.py)       | `aiohttp`-based server functionality | Implements a web server using the `aiohttp` library; this server handles HTTP requests and serves web-based functionalities.                                     |
 
 # Dependencies
+<!-- TODO: when changing hierarchy, move this part to the beginning of the doc, change H1 to H3 -->
+- [`aiohttp`](https://docs.aiohttp.org/en/stable/): currently, v3.9.1 (stable);
+- [`aiogram`](https://docs.aiogram.dev/en/latest/): currently, v3.2.0 (latest);
+- [`PyGithub`](https://pygithub.readthedocs.io/en/stable/introduction.html) for GitHub support.
 
-* `aiohttp`
-* `aiogram`
-* [PyGithub](https://pygithub.readthedocs.io/en/stable/index.html) for GitHub support.[^1538]
-
-[^1538]: Sadly, it doesn't have AsyncIO support, so it's best to rewrite the functions using it after [1538](https://github.com/PyGithub/PyGithub/issues/1538) is closed
-or to replace it with [githubkit](https://github.com/yanyongyu/githubkit).
+> [!NOTE]
+> Sadly, `PyGithub` does not support [`asyncio`](https://docs.python.org/3/library/asyncio.html), so it is preferable to rewrite the functions to be able to utilize it, once [PyGitHub: Issue 1538](https://github.com/PyGithub/PyGithub/issues/1538) is closed;\
+or to replace it with [githubkit](https://github.com/yanyongyu/githubkit) altogether.
