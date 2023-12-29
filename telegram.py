@@ -11,6 +11,7 @@ from json import dumps
 from json import loads
 from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import Command
+from aiogram.filters.command import CommandObject
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import Message
 from aiogram.types.inline_keyboard_button import InlineKeyboardButton
@@ -89,13 +90,8 @@ class TriageTelegramBot:
         self.telegram_group_id = config.get('telegram_group_id')
         self.github_sender = github_sender
         self.config = config
-        # Amount of people needed for triage
-        self.triage_threshold = config.get('triage_threshold')
         # Register commands
-        self.router.message.register(
-            self.command_register_group,
-            Command(commands=["register_group"])
-        )
+        self.register_commands()
 
     def stop(self):
         """
@@ -105,7 +101,29 @@ class TriageTelegramBot:
         self.running = False
 
     # Commands
-    async def command_register_group(self, message: Message) -> None:
+    def register_commands(self):
+        self.router.message.register(
+            self.command_register_group,
+            Command(commands=['register_group'])
+        )
+        self.router.message.register(
+            self.command_change_rotation_interval,
+            Command(commands=['change_rotation_interval'])
+        )
+        self.router.message.register(
+            self.command_change_repository,
+            Command(commands=['change_repository'])
+        )
+        self.router.message.register(
+            self.command_change_triage_threshold,
+            Command(commands=['change_triage_threshold'])
+        )
+
+    async def command_register_group(
+        self,
+        message: Message,
+        command: CommandObject
+    ) -> None:
         """
         This handler registers the group with `/register_group` command
 
@@ -114,7 +132,77 @@ class TriageTelegramBot:
         """
         self.config.set('telegram_group_id', message.chat.id)
         self.config.save()
-        await message.answer(f"Group is registered as default: <code>{message.chat.id}</code>")
+        await message.answer(
+            f"Group is registered as default: <code>{message.chat.id}</code>"
+        )
+
+    async def command_change_rotation_interval(
+        self,
+        message: Message,
+        command: CommandObject
+    ) -> None:
+        """
+        This handler changes the rotation interval config value,
+        reacting on the `/change_rotation_interval` command
+
+        Args:
+            message (Message): an aiogram message instance
+        """
+        # TODO handle possible exceptions
+        response = 'Interval changed'
+        try:
+            interval = int(command.args, 10)
+            self.config.set('feedback_rotation_interval', interval)
+            self.config.save()
+        except:
+            response = f'Invalid interval format: "{interval_str}"'
+        await message.answer(response)
+
+    async def command_change_repository(
+        self,
+        message: Message,
+        command: CommandObject
+    ) -> None:
+        """
+        This handler changes the default GitHub repository reacting on
+        `/change_repository` command
+
+        Args:
+            message (Message): an aiogram message instance
+        """
+        # TODO handle possible exceptions
+        github_str = 'https://github.com/'
+        github_repository: str = command.args
+        if github_repository.startswith(github_str):
+            github_repository = github_repository.replace(github_str, '')
+        response: str = 'GitHub repository changed'
+        if '/' in command.args:
+            self.config.set('github_repository', command.args)
+            self.config.save()
+        else:
+            response = f'Invalid repository format: "{command.args}"'
+        await message.answer(response)
+
+    async def command_change_triage_threshold(
+        self,
+        message: Message,
+        command: CommandObject
+    ) -> None:
+        """
+        This handler changes the triage vote threshold config option,
+        reacting on a `/change_triage_threshold` command
+
+        Args:
+            message (Message): an aiogram message instance
+        """
+        response: str = 'Triage vote threshold changed'
+        try:
+            min_votes: int = int(command.args, 10)
+            self.config.set('triage_threshold', min_votes)
+            self.config.save()
+        except:
+            response = f'Invalid vote count format: "{command.args}"'
+        await message.answer(response)
 
     # Generic feedback processing
     async def process_feedback_button_click(self, cbq: CallbackQuery):
@@ -142,9 +230,10 @@ class TriageTelegramBot:
             except TelegramBadRequest:
                 # Telegram API tends to throw it on button edits
                 # as the text remains the same.
+                # This part can be ignored safely.
                 pass
         # Create a new issue asynchronously (using a thread)
-        if vote_count >= self.triage_threshold:
+        if vote_count >= self.config.get('triage_threshold'):
             await self.send_feedback_to_github(cbq.message)
 
     async def send_feedback_to_github(self, tg_message):
