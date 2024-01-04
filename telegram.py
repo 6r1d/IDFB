@@ -7,8 +7,8 @@ Classes:
 """
 
 import asyncio
-from json import dumps
-from json import loads
+from json import dumps, loads
+from logging import error
 from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import Command
 from aiogram.filters.command import CommandObject
@@ -102,6 +102,18 @@ class TriageTelegramBot:
 
     # Commands
     def register_commands(self):
+        """
+        Registers multiple bot commands to the aiogram router.
+
+        The following commands are registered:
+        - register_group: sets the Telegram group for sending the messages.
+        - change_rotation_interval: changes an interval to check for rotated feedback records.
+        - change_repository: changes a GitHub issue repository.
+        - change_triage_threshold: changes the minimal triage votes
+
+        Note: This method should be called during the initialization phase of the bot
+        to ensure all commands are registered before the bot starts processing messages.
+        """
         self.router.message.register(
             self.command_register_group,
             Command(commands=['register_group'])
@@ -122,7 +134,7 @@ class TriageTelegramBot:
     async def command_register_group(
         self,
         message: Message,
-        command: CommandObject
+        _
     ) -> None:
         """
         This handler registers the group with `/register_group` command
@@ -148,14 +160,13 @@ class TriageTelegramBot:
         Args:
             message (Message): an aiogram message instance
         """
-        # TODO handle possible exceptions
         response = 'Interval changed'
         try:
             interval = int(command.args, 10)
             self.config.set('feedback_rotation_interval', interval)
             self.config.save()
-        except:
-            response = f'Invalid interval format: "{interval_str}"'
+        except ValueError:
+            response = f'Invalid interval format: "{command.args}"'
         await message.answer(response)
 
     async def command_change_repository(
@@ -170,18 +181,23 @@ class TriageTelegramBot:
         Args:
             message (Message): an aiogram message instance
         """
-        # TODO handle possible exceptions
-        github_str = 'https://github.com/'
-        github_repository: str = command.args
-        if github_repository.startswith(github_str):
-            github_repository = github_repository.replace(github_str, '')
-        response: str = 'GitHub repository changed'
-        if '/' in command.args:
-            self.config.set('github_repository', command.args)
-            self.config.save()
-        else:
-            response = f'Invalid repository format: "{command.args}"'
-        await message.answer(response)
+        try:
+            github_str = 'https://github.com/'
+            github_repository: str = command.args.strip()
+            if github_repository.startswith(github_str):
+                github_repository = github_repository.replace(github_str, '')
+            response: str = 'GitHub repository changed'
+            if '/' in command.args:
+                self.config.set('github_repository', command.args)
+                self.config.save()
+            else:
+                response = f'Invalid repository format: "{command.args}"'
+            await message.answer(response)
+        except IOError as e:
+            error(f"Error changing GitHub repository: {e}")
+            await message.answer(
+                "An error occurred while changing the repository."
+            )
 
     async def command_change_triage_threshold(
         self,
@@ -200,7 +216,7 @@ class TriageTelegramBot:
             min_votes: int = int(command.args, 10)
             self.config.set('triage_threshold', min_votes)
             self.config.save()
-        except:
+        except ValueError:
             response = f'Invalid vote count format: "{command.args}"'
         await message.answer(response)
 
