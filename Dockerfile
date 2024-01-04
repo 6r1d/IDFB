@@ -41,4 +41,4 @@ ENV PYTHONUNBUFFERED 1
 
 HEALTHCHECK CMD python /opt/bot/healthcheck.py || exit 1
 
-CMD ["/opt/bot/bot.py", "--addr", "0.0.0.0", "--port", "8080", "--rotation_path", "./rotation", "--config", "./config.json", "--telegram_token", "/run/secrets/telegram_token.txt", "--github_token", "/run/secrets/github_token.txt"]
+CMD ["/opt/bot/bot.py", "--addr", "0.0.0.0", "--port", "8080", "--rotation_path", "./rotation", "--config", "./config.json"]

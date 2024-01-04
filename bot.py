@@ -9,10 +9,10 @@ and then transfers the feedback voted to be useful to GitHub.
 """
 
 import asyncio
-import logging
+from logging import basicConfig as loggingConfig, INFO
 from pathlib import Path
-from arguments import get_arguments
 from argparse import Namespace
+from arguments import get_arguments, ensure_tokens
 from github_issue import GitHubSender
 from rotation import rotate
 from webserver import TriageWebServer
@@ -26,20 +26,24 @@ async def main():
     """
     # Parse the command-line arguments
     input_args: Namespace = get_arguments()
+    # Load the tokens from the environment or secrets
+    telegram_token, github_token = ensure_tokens(
+        input_args, ['telegram_token', 'github_token']
+    )
     # Load config
     config = Config(input_args.config)    
     # Configure logging
-    logging.basicConfig(level=logging.INFO)
+    loggingConfig(level=INFO)
     # Configure the rotation
     rotation_path = Path(input_args.rotation_path).absolute()
     # Configure the GitHub sender
     github_sender = GitHubSender(
-        input_args.github_token.read().strip(),
+        github_token,
         config.get('github_repository')
     )
     # Configure the Telegram bot
     telegram_bot = TriageTelegramBot(
-        token=input_args.telegram_token.read().strip(),
+        token=telegram_token,
         github_sender=github_sender,
         config=config
     )

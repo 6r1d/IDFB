@@ -3,28 +3,31 @@ This module configures the Argparse library to parse command-line arguments
 required for the Soramitsu Iroha feedback bot.
 """
 
+from os import getenv
 from os.path import isdir, isfile
-from argparse import ArgumentParser, FileType
+from io import IOBase
+from typing import List, Dict
+from argparse import ArgumentParser, FileType, Namespace
 from pathlib import Path
 
-def dir_path(dir_path: str) -> Path:
+def dir_path(dpath: str) -> Path:
     """
     Ensure that the supplied input is a valid directory path.
 
     Args:
-        dir_path (str): input directory location
+        dpath (str): input directory location
 
     Returns:
         Path: A Path object representing the validated directory path.
 
     Raises:
-        NotADirectoryError: If the dir_path does not exist or is not a directory.
+        NotADirectoryError: If the dpath does not exist or is not a directory.
     """
-    if not isdir(dir_path):
-        raise NotADirectoryError(f'"{dir_path}" is not a valid directory.')
-    return Path(dir_path)
+    if not isdir(dpath):
+        raise NotADirectoryError(f'"{dpath}" is not a valid directory.')
+    return Path(dpath)
 
-def file_path(file_path: str) -> Path:
+def file_path(fpath: str) -> Path:
     """
     Ensure that the supplied input is a valid file.
 
@@ -32,19 +35,19 @@ def file_path(file_path: str) -> Path:
     does not require the user to set a way of interaction with a file.
 
     Args:
-        file_path (str): file location
+        fpath (str): file location
 
     Returns:
         Path: A Path object representing the validated file path.
 
     Raises:
-        FileNotFoundError: If the file_path does not exist or is not a file.
+        FileNotFoundError: If the fpath does not exist or is not a file.
     """
-    if not isfile(file_path):
-        raise FileNotFoundError(f'The file "{file_path}" does not exist.')
-    if isdir(file_path):
-        raise IsADirectoryError(f"'{file_path}' is a directory, not a file.")
-    return Path(file_path)
+    if not isfile(fpath):
+        raise FileNotFoundError(f'The file "{fpath}" does not exist.')
+    if isdir(fpath):
+        raise IsADirectoryError(f"'{fpath}' is a directory, not a file.")
+    return Path(fpath)
 
 def get_arguments():
     """
@@ -67,13 +70,11 @@ def get_arguments():
     telegram_bot_group = parser.add_argument_group('Telegram bot configuration')
     telegram_bot_group.add_argument('-tk', "--telegram_token",
                                     help="Path to the Telegram token file",
-                                    required=True,
                                     type=FileType('r'))
     # GitHub-related arguments
     github_group = parser.add_argument_group('GitHub interface configuration')
     github_group.add_argument('-gt', "--github_token",
                                     help="Path to the GitHub token file",
-                                    required=True,
                                     type=FileType('r'))
     # HTTP server-related arguments
     http_server_group = parser.add_argument_group('HTTP server configuration')
@@ -84,3 +85,64 @@ def get_arguments():
                                    help="Server port",
                                    type=int, required=True)
     return parser.parse_args()
+
+def check_arguments(namespace: Namespace,
+                    args_to_check: List[str]) -> Dict:
+    """
+    Checks if the given arguments exist in the argparse Namespace
+    and environment variables.
+
+    Raises:
+        ValueError if any argument is missing.
+
+    Args:
+        namespace (Namespace): arguments to validate.
+        args_to_check (List): argument names to check.
+
+    Returns:
+        (Dict): a dictionary containing the argument names
+                and their corresponding values.
+    """
+    args_dict = {}
+    for arg in args_to_check:
+        value = None
+        # Check in argparse.Namespace
+        if hasattr(namespace, arg):
+            value = getattr(namespace, arg)
+        # If not found in argparse, check in environment variables;
+        # in case the argument name was uppercased, use that
+        if value is None:
+            value = getenv(arg) or getenv(arg.upper())
+        # If argument is still not found, raise an exception
+        if value is None:
+            raise ValueError(
+                f'Argument "{arg}" was not found '
+                'in argparse Namespace or environment variables.'
+            )
+        args_dict[arg] = value
+    return args_dict
+
+def ensure_tokens(args: Namespace, token_names: List[str]) -> List[str]:
+    """
+    Ensures that the specified tokens are extracted from the arguments.
+
+    Args:
+        args (Namespace): The argparse Namespace containing the arguments.
+        token_names (List[str]): A list of token names to extract.
+
+    Returns:
+        List[str]: A list of values corresponding to the token names.
+    """
+    input_args = check_arguments(args, token_names)
+    result = []
+    for token_name in token_names:
+        token = input_args.get(token_name)
+        if isinstance(token, IOBase):
+            try:
+                token = token.read().strip()
+            except IOError as exc:
+                raise IOError(
+                    f'Unable to read the file token: {token_name}'
+                ) from exc
+        result.append(token)
+    return result
