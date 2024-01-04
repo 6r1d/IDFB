@@ -84,13 +84,30 @@ To build a custom Docker image for your project, perform the following steps:
 
 ### Running a Custom Docker Image
 
-To run a custom Docker image of the bot, run the `docker run` command with the [command-line arguments](#command-line-arguments) specified:
+To run a custom Docker image of the bot, run the `docker run` command with the [command-line arguments](#command-line-arguments) specified. There are two ways to supply tokens we'll show: `secrets` and `environment variables`.
 
 > [!IMPORTANT]
 > When running the bot through its Docker image, the [command-line arguments](#command-line-arguments) must still be specified, however the syntax varies from the JSON format (see below).
 
+An approach using the **environment variables**:
+
 ```bash
-docker run \                                                   
+docker run \
+       --init \
+       --expose 8080 \
+       -p 8080:8080 \
+       -v ./config.json:/opt/bot/config.json \
+       -v ./rotation:/opt/bot/rotation \
+       -v ./secrets/telegram_group_id.txt:/run/secrets/telegram_group_id.txt \
+       --env TELEGRAM_TOKEN="YOUR_TELEGRAM_TOKEN" \
+       --env GITHUB_TOKEN="YOUR_GITHUB TOKEN" \
+       'iamgrid/iroha_feedback_bot:vX.Y.Z'
+```
+
+An approach using the **secrets**:
+
+```bash
+docker run \
        --init \
        --expose 8080 \
        -p 8080:8080 \
