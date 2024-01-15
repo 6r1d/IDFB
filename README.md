@@ -2,9 +2,50 @@
 
 This bot reposts user feedback entries received via HTTP from the [Iroha 2 Documentation](https://docs.iroha.tech/) website to a designated [Telegram](https://telegram.org/) group. Members of the group can discuss and vote on the entries, determining whether any of them require further attention. Once an entry receives enough votes, the bot creates a new GitHub issue in the specified repository and reposts the feedback there.
 
+### Dependencies
+
+- [`aiohttp`](https://docs.aiohttp.org/en/stable/): currently, v3.9.1 (stable);
+- [`aiogram`](https://docs.aiogram.dev/en/latest/): currently, v3.2.0 (latest);
+- [`PyGithub`](https://pygithub.readthedocs.io/en/stable/introduction.html) for GitHub support.
+
+> [!NOTE]
+> Sadly, `PyGithub` does not support [`asyncio`](https://docs.python.org/3/library/asyncio.html), so it is preferable to rewrite the functions to be able to utilize it, once [PyGitHub: Issue 1538](https://github.com/PyGithub/PyGithub/issues/1538) is closed;\
+or to replace it with [githubkit](https://github.com/yanyongyu/githubkit) altogether.
+
+### Docker Image
+
+- [Docker Image on Dockerhub](https://hub.docker.com/repository/docker/iamgrid/iroha_feedback_bot/general)
+  - Latest Tag: [iamgrid/iroha_feedback_bot:v0.1.12](https://hub.docker.com/layers/iamgrid/iroha_feedback_bot/v0.1.12/images/sha256-3d5ecc50f10a3d02d777799c5225b61e918cc43f3b0dd50a2d89948c5b6c902e?context=explore)
+  <!-- TODO: Update the latest tag every time a new version rolls out -->
+
 # Configuring the Bot
-<!-- TODO: when changing hierarchy, consider swapping the H2 subtopics around -->
+
 For the bot to function properly, it requires certain configuration parameters to be specified. These are split between the `config.json` configuration file and command-line arguments that are specified when running the bot.
+
+## Configuration File
+
+The bot uses the `config.json` configuration file to set the following parameters:
+
+| Parameter                    | Type               | Description                                                                                                                   |
+| ---------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `telegram_group_id`          | `String`/`Integer` | The unique ID of the Telegram group that the collected feedback entries are sent to.                                          |
+| `github_repository`          | `String`           | The GitHub repository that the approved feedback entries are forwarded to.<br>Format: `<GitHub Username>`/`<Repository Name>` |
+| `feedback_rotation_interval` | `Integer`          | The interval in seconds that defines how frequently the feedback files are scanned and sent to the Telegram group.            |
+| `triage_threshold`           | `Integer`          | The minimum number of votes that a feedback entry needs to receive before it is sent to the specified GitHub repository.      |
+
+**Example**:
+
+```json
+{
+    "telegram_group_id": "<TELEGRAM_GROUP_ID>",
+    "github_repository": "<USERNAME>/<REPOSITORY_NAME>",
+    "feedback_rotation_interval": 1,
+    "triage_threshold": 3
+}
+```
+
+> [!INFO]
+> These parameters can be changed while the bot is already running. See [Managing the Running Bot](#managing-the-running-bot).
 
 ## Command-Line Arguments
 
@@ -19,31 +60,18 @@ Available command-line arguments for configuring the bot:
 | `--telegram_token` | Specifies the path to a `.txt` file containing the Telegram bot token. | `--telegram_token` `./secrets/telegram_token.txt` | Uses the `telegram_token.txt` file in the `/secrets` directory.  |
 | `--github_token`   | Specifies the path to a `.txt` file containing the GitHub token.       | `--github_token` `./secrets/github_token.txt`     | Uses the `github_token.txt` file in the `/secrets` directory.    |
 
-## Configuration File
-
-The bot uses the `config.json` configuration file to set the following parameters:
-
-| Parameter                    | Type               | Description                                                                                                                   |
-| ---------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `telegram_group_id`          | `String`/`Integer` | The unique ID of the Telegram group that the collected feedback entries are sent to.                                          |
-| `github_repository`          | `String`           | The GitHub repository that the approved feedback entries are forwarded to.<br>Format: `<GitHub Username>`/`<Repository Name>` |
-| `feedback_rotation_interval` | `Integer`          | The interval in seconds that defines how frequently the feedback files are scanned and sent to the Telegram group.            |
-| `triage_threshold`           | `Integer`          | The number of votes that a feedback entry needs to receive before it is sent to the specified GitHub repository.              |
-
-**Example**:
-
-```json
-{
-    "telegram_group_id": "<TELEGRAM_GROUP_ID>",
-    "github_repository": "<USER>/<REPOSITORY>",
-    "feedback_rotation_interval": 1,
-    "triage_threshold": 3
-}
-```
-
 # Running the Bot
 
-## Running the Bot Manually
+There are two main ways that this bot can be built and run:
+
+1. [**Using Python**](#running-the-bot-with-python):\
+   Python provides a versatile and swift approach, especially during development and testing phases. Even though, the bot [can be run manually](#running-the-bot-manually), [creating and executing it within a Python virtual environment](#running-the-bot-in-a-virtual-environment) proves to be a fast and resource-efficient solution for simultaneous development and testing of several instances of the bot.
+2. [**Using Docker**](#running-the-bot-via-docker):\
+   Docker serves as an excellent tool for deploying applications and ensuring consistency across various environments. While using Docker, virtual environments are not necessary as Docker containers inherently manage dependency isolation.
+
+## Running the Bot with Python
+
+### Running the Bot Manually
 
 To run the bot manually, perform the following steps:
 
@@ -61,9 +89,46 @@ To run the bot manually, perform the following steps:
           --port 8080 \
           --rotation_path ./rotation \
           --config ./config.json \
-          --telegram_group_id ./secrets/telegram_group_id.txt \
           --telegram_token ./secrets/telegram_token.txt \
           --github_token ./secrets/github_token.txt
+   ```
+
+### Running the Bot in a Virtual Environment
+
+> [!INFO]
+> In Python, virtual environments can be created using the built-in [`venv`](https://docs.python.org/3/library/venv.html) module, which is useful for managing dependencies and avoiding version conflicts during the development of Python projects, including this bot.
+> Using `venv` provides an isolated and controlled workspace for Python projects, enhancing reliability during the development and deployment phases.
+
+To run the bot in a Python virtual environment using the `venv` module, perform the following steps:
+
+0. Have [Python](https://www.python.org/) (`v3.3.x` or newer) installed.
+1. Create a virtual environment using the `venv` module:
+
+   ```bash
+   # <PROJECT_NAME> - your project directory name
+   python -m venv <PROJECT_NAME>
+
+   # Example:
+   python -m venv my_bot_env
+   ```
+
+2. Navigate to the project directory in your terminal, then activate the virtual environment:
+
+   ```bash
+   # If you're using Bash or Zsh:
+   source bin/activate
+
+   # If you're using Fish:
+   source bin/activate.fish
+   ```
+
+3. Install your required modules and run your instance of the bot within the activated environment.\
+   See [Running the Bot Manually](#running-the-bot-manually), Steps 1 and 2.
+
+4. Once you're done, exit the virtual environment:
+
+   ```bash
+   deactivate
    ```
 
 ## Running the Bot via Docker
@@ -80,67 +145,76 @@ To build a custom Docker image for your project, perform the following steps:
    ```
 
 > [!IMPORTANT]
-> Make sure to replace `vX.Y.Z` in `iamgrid/iroha_feedback_bot:vX.Y.Z` with an appropriate image tag (e.g., `v0.1.9` for the latest tag) that you want to run.
+> Make sure to replace `vX.Y.Z` in `iamgrid/iroha_feedback_bot:vX.Y.Z` with an appropriate image tag (e.g., `v0.1.12` for the latest tag) that you want to run.
 
 ### Running a Custom Docker Image
-
-To run a custom Docker image of the bot, run the `docker run` command with the [command-line arguments](#command-line-arguments) specified. There are two ways to supply tokens we'll show: `secrets` and `environment variables`.
 
 > [!IMPORTANT]
 > When running the bot through its Docker image, the [command-line arguments](#command-line-arguments) must still be specified, however the syntax varies from the JSON format (see below).
 
-An approach using the **environment variables**:
+To run a custom Docker image of the bot, run the `docker run` command with the [command-line arguments](#command-line-arguments) specified in one of the following two ways:
 
-```bash
-docker run \
-       --init \
-       --expose 8080 \
-       -p 8080:8080 \
-       -v ./config.json:/opt/bot/config.json \
-       -v ./rotation:/opt/bot/rotation \
-       -v ./secrets/telegram_group_id.txt:/run/secrets/telegram_group_id.txt \
-       --env TELEGRAM_TOKEN="YOUR_TELEGRAM_TOKEN" \
-       --env GITHUB_TOKEN="YOUR_GITHUB TOKEN" \
-       'iamgrid/iroha_feedback_bot:vX.Y.Z'
-```
+1. Supplying the tokens via `secrets`:
 
-An approach using the **secrets**:
+  ```bash
+  docker run \
+         --init \
+         --expose 8080 \
+         -p 8080:8080 \
+         -v ./config.json:/opt/bot/config.json \
+         -v ./rotation:/opt/bot/rotation \
+         -v ./secrets/telegram_token.txt:/run/secrets/telegram_token.txt \
+         -v ./secrets/github_token.txt:/run/secrets/github_token.txt \
+         'iamgrid/iroha_feedback_bot:vX.Y.Z'
+  ```
 
-```bash
-docker run \
-       --init \
-       --expose 8080 \
-       -p 8080:8080 \
-       -v ./config.json:/opt/bot/config.json \
-       -v ./rotation:/opt/bot/rotation \
-       -v ./secrets/telegram_token.txt:/run/secrets/telegram_token.txt \
-       -v ./secrets/telegram_group_id.txt:/run/secrets/telegram_group_id.txt \
-       -v ./secrets/github_token.txt:/run/secrets/github_token.txt \
-       'iamgrid/iroha_feedback_bot:vX.Y.Z'
-```
+2. Supplying the tokens via `environment variables`:
+
+  ```bash
+  docker run \
+         --init \
+         --expose 8080 \
+         -p 8080:8080 \
+         -v ./config.json:/opt/bot/config.json \
+         -v ./rotation:/opt/bot/rotation \
+         --env TELEGRAM_TOKEN="YOUR_TELEGRAM_TOKEN" \
+         --env GITHUB_TOKEN="YOUR_GITHUB TOKEN" \
+         'iamgrid/iroha_feedback_bot:vX.Y.Z'
+  ```
 
 > [!IMPORTANT]
-> Make sure to replace `vX.Y.Z` in `iamgrid/iroha_feedback_bot:vX.Y.Z` with an appropriate image tag (e.g., `v0.1.9` for the latest tag) that you want to run.
+> Make sure to replace `vX.Y.Z` in `iamgrid/iroha_feedback_bot:vX.Y.Z` with an appropriate image tag (e.g., `v0.1.12` for the latest tag) that you want to run.
 
 Descriptions of the used parameters:
 
-- `--init`: initializes a new container process with [`tini`](https://github.com/krallin/tini) (comes included with Docker 1.13 or newer).
-- `--expose 8080`: exposes the `8080` the for the Docker container.
-- `-p`: the port mapping parameter, matches the first system port with the one used by the Docker image.
-- `-v HOST_PATH:CONTAINER_PATH` binds a file from the host to a file within a container.
+- `--init` — initializes a new container process with [`tini`](https://github.com/krallin/tini) (comes included with Docker 1.13 or newer).
+- `--expose 8080` — exposes the `8080` the for the Docker container.
+- `-p` — the port mapping parameter, matches the first system port with the one used by the Docker image.
+- `-v HOST_PATH:CONTAINER_PATH` binds a file from the host to a file within a container:
   - Rotation directory (`/opt/bot/rotation` in the image) is the directory that stores the JSON files containing the user feedback. It makes sure that the files are either sent successfully and removed or are preserved for the next container run.
   - Telegram token (`/run/secrets/telegram_token.txt` in the image) is used by the bot to log in to Telegram.
-  - Telegram group ID (`/run/secrets/telegram_group_id.txt` in the image) specifies the Telegram group that receives the feedback entries.
   - GitHub token (`/run/secrets/github_token.txt` in the image) is used by the bot for two-way communication with the GitHub services.
+- `--env` binds an environment variable:
+  - `TELEGRAM_TOKEN` — Telegram token used by the bot to log in to Telegram.
+  - `GITHUB_TOKEN` — GitHub token used by the bot for two-way communication with the GitHub services.
 
+# Managing the Running Bot
 
-# Docker Image
-<!-- TODO: when changing hierarchy, move this part to the beginning of the doc, change H1 to H3 -->
-- [Docker Image on Dockerhub](https://hub.docker.com/repository/docker/iamgrid/iroha_feedback_bot/general)
-  - Latest Tag: [iamgrid/iroha_feedback_bot:v0.1.9](https://hub.docker.com/layers/iamgrid/iroha_feedback_bot/v0.1.9/images/sha256-4f5d84d859c7b3990f461f3fd47b38a388fd70eff84e4a45b64a6e17e9708451?context=explore)
-  <!-- TODO: Update the latest tag once its updated -->
+It is possible to change the configuration of a running bot instance without directly modifying the `config.json` configuration file. To do so, you can use the following commands:
 
-# Tokens
+- `/register_group` — registers a new Telegram group that the collected feedback entries are sent to.\
+  > **Example**: `/register_group <TELEGRAM_GROUP_ID>`
+
+- `/change_repository` — changes the GitHub repository that the approved feedback entries are forwarded to.\
+  > **Example**: `/change_repository <USERNAME>/<REPOSITORY_NAME>`
+
+- `/change_rotation_interval` — changes the interval in seconds for scanning the rotated feedback records. Using longer intervals may save the system resources.\
+  > **Example**: `/change_rotation_interval 5` (sets the interval to `5` seconds)
+
+- `/change_triage_threshold` — changes the minimum number of votes that a feedback entry needs to receive before it is sent to the specified GitHub repository.\
+  > **Example**: `/change_triage_threshold 3` (sets the number to `3` votes)
+
+# Generating Tokens
 
 ## GitHub Token
 
@@ -201,13 +275,3 @@ Below is an overview of the files in the current codebase, along with their resp
 | [`hash.py`](./hash.py)                 | Random string generation utilities   | Provides functions for generating and manipulating hash values and random strings; accommodates various hash-related operations.                                 |
 | [`telegram.py`](./telegram.py)         | Telegram bot functionality           | Contains the code responsible for implementing Telegram bot features; it handles messages sending, processing, and other interactions with the Telegram API.     |
 | [`webserver.py`](./webserver.py)       | `aiohttp`-based server functionality | Implements a web server using the `aiohttp` library; this server handles HTTP requests and serves web-based functionalities.                                     |
-
-# Dependencies
-<!-- TODO: when changing hierarchy, move this part to the beginning of the doc, change H1 to H3 -->
-- [`aiohttp`](https://docs.aiohttp.org/en/stable/): currently, v3.9.1 (stable);
-- [`aiogram`](https://docs.aiogram.dev/en/latest/): currently, v3.2.0 (latest);
-- [`PyGithub`](https://pygithub.readthedocs.io/en/stable/introduction.html) for GitHub support.
-
-> [!NOTE]
-> Sadly, `PyGithub` does not support [`asyncio`](https://docs.python.org/3/library/asyncio.html), so it is preferable to rewrite the functions to be able to utilize it, once [PyGitHub: Issue 1538](https://github.com/PyGithub/PyGithub/issues/1538) is closed;\
-or to replace it with [githubkit](https://github.com/yanyongyu/githubkit) altogether.
