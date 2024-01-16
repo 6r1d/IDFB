@@ -2,6 +2,15 @@
 
 This bot reposts user feedback entries received via HTTP from the [Iroha 2 Documentation](https://docs.iroha.tech/) website to a designated [Telegram](https://telegram.org/) group. Members of the group can discuss and vote on the entries, determining whether any of them require further attention. Once an entry receives enough votes, the bot creates a new GitHub issue in the specified repository and reposts the feedback there.
 
+To successfully set up an instance of the bot, perform the following steps:
+
+1. Clone this repository.
+2. [Create a new Telegram bot and generate a Telegram Bot API token for it](#telegram-token).
+3. [Create a new GitHub account for the bot and generate a GitHub token for it](#github-token).
+4. Add the bot to the Telegram group that the bot will send the collected feedback entries to.
+5. [Configure the bot](#configuring-the-bot).
+6. [Run the bot](#running-the-bot).
+
 ### Dependencies
 
 - [`aiohttp`](https://docs.aiohttp.org/en/stable/): currently, v3.9.1 (stable);
@@ -99,9 +108,13 @@ To run the bot manually, perform the following steps:
 > In Python, virtual environments can be created using the built-in [`venv`](https://docs.python.org/3/library/venv.html) module, which is useful for managing dependencies and avoiding version conflicts during the development of Python projects, including this bot.
 > Using `venv` provides an isolated and controlled workspace for Python projects, enhancing reliability during the development and deployment phases.
 
+> [!TIPS]
+> It is possible to run Python scripts inside a `venv` virtual environment without activating them by specifying the full path to the Python interpreter inside the environment.
+> It may also be helpful to edit the `bin/activate` script to your specific needs.
+
 To run the bot in a Python virtual environment using the `venv` module, perform the following steps:
 
-0. Have [Python](https://www.python.org/) (`v3.3.x` or newer) installed.
+0. Have [Python](https://www.python.org/) (`v3.11.6` or newer) installed.
 1. Create a virtual environment using the `venv` module:
 
    ```bash
@@ -178,7 +191,7 @@ To run a custom Docker image of the bot, run the `docker run` command with the [
          -v ./config.json:/opt/bot/config.json \
          -v ./rotation:/opt/bot/rotation \
          --env TELEGRAM_TOKEN="YOUR_TELEGRAM_TOKEN" \
-         --env GITHUB_TOKEN="YOUR_GITHUB TOKEN" \
+         --env GITHUB_TOKEN="YOUR_GITHUB_TOKEN" \
          'iamgrid/iroha_feedback_bot:vX.Y.Z'
   ```
 
@@ -200,10 +213,10 @@ Descriptions of the used parameters:
 
 # Managing the Running Bot
 
-It is possible to change the configuration of a running bot instance without directly modifying the `config.json` configuration file. To do so, you can use the following commands:
+It is possible to change the configuration of a running bot instance without directly modifying the `config.json` configuration file. To do so, you can use the following commands in the Telegram chat with the bot:
 
-- `/register_group` — registers a new Telegram group that the collected feedback entries are sent to.\
-  > **Example**: `/register_group <TELEGRAM_GROUP_ID>`
+- `/register_group` — changes the Telegram group that the collected feedback entries are sent to; must be sent as text message to the specific group you want to register, and the bot must already be added to the group.
+  > **Example**: `/register_group`
 
 - `/change_repository` — changes the GitHub repository that the approved feedback entries are forwarded to.\
   > **Example**: `/change_repository <USERNAME>/<REPOSITORY_NAME>`
@@ -234,6 +247,8 @@ To create and configure your GitHub token, perform the following steps:
 6. Under the **Permissions** section, select the **Repository permissions** menu and navigate down to the **Issues** entry, then select **Read and write** in the **Access:** menu within the entry.
 7. When ready, select **Generate token** at the bottom of the page.
 
+Once you have a GitHub token for your bot instance, add it to the `secrets\github_token.txt` file.
+
 > [!TIP]
 > If, at any point, you're experiencing difficulties with generating a GitHub token, consult the official documentation:\
   [GitHub Docs: Managing your personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
@@ -255,6 +270,8 @@ If you don't have a token yet, create one by performing the following steps:
 3. Type in or select `/newbot` from the message with a list of commands.
 4. Follow the instructions provided by `@BotFather` via chat messages to create and configure your bot.
 5. Once done, `@BotFather` will provide you with a unique Telegram Bot API token string.
+
+Once you have a Telegram Bot API token for your bot instance, add it to the `secrets\telegram_token.txt` file.
 
 The Telegram Bot API token is used to authenticate your bot with the Telegram API (see `--telegram_token ` in the [Command-Line Arguments](#command-line-arguments) table).
 
